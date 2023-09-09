@@ -9,7 +9,7 @@ Your task is to create a public project on GitHub or GitLab and write a program 
 ## Requirements
 1. Language: Python.
 2. Repository: Create a public repository on GitHub or GitLab and upload all the necessary files.
-3. ead Trades: Your program must be able to read trades from a provided CSV file. The file will contain the following columns: Timestamp, Price.
+3. Read Trades: Your program must be able to read trades from a provided CSV file. The file will contain the following columns: Timestamp, Price.
 4. Candlestick Formation: Aggregate trades into candlesticks based on the provided time interval (e.g., 5 minutes, 1 hour). The candlesticks should include Open, High, Low, Close values.
 5. EMA Calculation: Implement a function to calculate the Exponential Moving Average (EMA) with a given length (e.g., 14 periods). Your function should be well-documented and tested.
 ## Submission
