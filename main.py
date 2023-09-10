@@ -1,31 +1,11 @@
+import pprint
+
 import database
 import views
 
 
 if __name__ == "__main__":
-    # result = database.get_data_2()
-    # print(result)
-    # print(views.check_data_valid(["2023-07-23 06:35:11.997999872", "1873.3567938612"]))
-    # print(views.check_data_valid(["2023-07-23 06:q5:11.997999872", "1873.3567938612"]))
-    # print(views.check_data_valid(["2023-07-23 06:35:s1.997999872", "1873.3567938612"]))
-    # print(views.check_data_valid(["2023-07-23 a6:35:11.997999872", "1873.3567938612"]))
-    # print(views.check_data_valid(["2023-07-23 06:35:11.'97999872", "1873.3567938612"]))
-    # print(views.check_data_valid(["2023-07-[3 06:35:11.997999872", "1873.3567938612"]))
-    # print(views.check_data_valid(["2023-z7-23 06:35:11.997999872", "1873.3567938612"]))
-    # print(views.check_data_valid(["2o23-07-23 06:35:11.997999872", "1873.3567938612"]))
-    # print(views.check_data_valid(["2023-07-23 06:35:11.997999872", "фывыфаы"]))
-    # print(views.check_data_valid(["invalid_date", "invalid_price"]))
-    views.test_data_plot()
-    # data = [
-    #     ["2023-07-02 20:46:09.532999936", "1918.1238959067"],
-    #     ["2023-07-02 20:46:09.533999872", "1919.2050839015"],
-    #     ["2023-07-02 20:46:09.535000064", "1920.3860197041"],
-    #     ["2023-07-02 20:46:13.536000000", "1921.3860197041"],
-    #     ["2023-07-02 20:46:13.536999936", "1922.2887467721"],
-    #     ["2023-07-02 20:46:15.538000128", "1923.6474874592"],
-    #     ["2023-07-02 20:56:03.539000064", "1924.3433779135"],
-    #     ["2023-07-02 20:56:13.540000000", "1925.0396467343"],
-    #     ["2023-07-02 21:00:31.540999936", "1926.3433779135"],
-    #     ["2023-07-02 21:00:31.542000128", "1926.5290507405"],
-    # ]
-    # print(views.create_plot_datas(data))
+    data = database.get_data()
+    plot_datas = views.create_plot_datas(data)
+    pprint.pprint(type(plot_datas[0]["open_date"]))
+    # views.create_plot_from_datas(plot_datas)

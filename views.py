@@ -55,6 +55,8 @@ def check_data_valid(date_and_price: List[str]) -> Union[list, None]:
             return [date, float(price)]
     except ValueError as error:
         logger.error(f"Некорректные данные: {error}")
+    except KeyError:
+        pass
     return None
 
 
@@ -105,7 +107,7 @@ def create_plot_datas(data: list):
     ['2023-07-02 21:26:01.558000128', '1922.1421207547']]
     :return:
     """
-    # data = database.get_data()
+
     plot_data = list()
     for i in range(len(data)-1):
         valid_data = check_data_valid(data[i])
@@ -115,23 +117,22 @@ def create_plot_datas(data: list):
             break
     for row in data:
         needed_data = plot_data[-1]
-        plot_row = {}
         valid_data = check_data_valid(row)
         if valid_data:
+
             last_close_date = needed_data["close_date"]
             current_close_date, current_price = valid_data[0], valid_data[1]
             less_1_hour = get_time_difference(last_close_date, current_close_date)
             if less_1_hour:
-                plot_row["close_date"] = last_close_date
-                current_high_price = plot_data[-1]["high"]
-                if current_price - current_high_price > 0:
+                # plot_data[-1]["close_date"] = last_close_date
+                if current_price > plot_data[-1]["high"]:
                     plot_data[-1]["high"] = current_price
                 if current_price < plot_data[-1]["low"]:
                     plot_data[-1]["low"] = current_price
-                print(plot_data)
             else:
                 plot_data[-1]["close_date"] = current_close_date
                 plot_data[-1]["close"] = current_price
+                plot_row = {}
                 plot_row["open_date"] = current_close_date
                 plot_row["close_date"] = current_close_date
                 plot_row["open"] = current_price
@@ -199,5 +200,10 @@ def test_data_plot():
     mpf.plot(df, type="candle", title="График свечей OHLC с EMA", ylabel="Цена", volume=False, addplot=[mpf.make_addplot(df["EMA"], color='blue')])
 
 # Вызываем функцию для построения графика
-test_data_plot()
+# test_data_plot()
+# datas = database.get_data()
+# print(len(datas))
+# for row in datas:
+#     print(row)
+
 
