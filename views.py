@@ -1,112 +1,9 @@
-import logging
-from typing import List, Union
-
 import pandas as pd
 import mplfinance as mpf
-import datetime
 
-
-logger = logging.getLogger(__name__)
-
-
-def check_date_valid(time: str) -> bool:
-    """
-    Функция проверяет дату на корректность значения и формат
-    :param time: '2023-07-22 11:41:59.580000000'
-    :return: True | False
-    """
-    try:
-        date_format = "%Y-%m-%d %H:%M:%S"
-        date_parts = time.split(".")
-        date_without_microseconds = date_parts[0]
-        microseconds = date_parts[1]
-        date = datetime.datetime.strptime(date_without_microseconds, date_format)
-        if date and microseconds.isdigit():
-            return True
-    except Exception as error:
-        logger.error(f"Произошла ошибка: {error}")
-        return False
-
-
-def check_price_valid(price: str) -> bool:
-    """
-
-    :param price: '1873.3567938612'
-    :return: True | False
-    """
-    integer_part, decimal_part = price.split(".")
-    return integer_part.isdigit() and decimal_part.isdigit()
-
-
-def check_data_valid(date_and_price: List[str]) -> Union[list, None]:
-    """
-    Функция, которая получает список, проверяет и возвращает корректные данные или None
-    :param date_and_price: ['2023-07-23 05:11:47.948000000', '1873.3567938612']
-    :return: ['2023-07-23 05:11:47.948000000', 1873.3567938612] | None
-    """
-    try:
-        date, price = date_and_price[0], date_and_price[1]
-        is_date_valid = check_date_valid(date)
-        is_price_valid = check_price_valid(price)
-        if is_date_valid and is_price_valid:
-            return [date, float(price)]
-    except ValueError as error:
-        logger.error(f"Некорректные данные: {error}")
-    except KeyError:
-        pass
-    return None
-
-
-def create_ohlc(date_and_price: List[Union[str, int, float]]) -> dict:
-    """
-
-    :param date_and_price:
-    :return:
-    """
-    ohlc_dict = {
-        "open_date": date_and_price[0],
-        "close_date": date_and_price[0],
-        "open": date_and_price[1],
-        "high": date_and_price[1],
-        "low": date_and_price[1],
-        "close": date_and_price[1],
-    }
-    return ohlc_dict
-
-
-def get_time_difference(last_date: str, current_date: str) -> bool:
-    """
-
-    :param last_date:
-    :param current_date: True | False
-    :return:
-    """
-    date_format = "%Y-%m-%d %H:%M:%S"
-    last_date_1, current_date_1 = last_date.split("."), current_date.split(".")
-    last_date_datetime = datetime.datetime.strptime(last_date_1[0], date_format)
-    current_date_datetime = datetime.datetime.strptime(current_date_1[0], date_format)
-    if (current_date_datetime - last_date_datetime) < datetime.timedelta(hours=1):
-        return True
-    return False
-
-
-def get_sum_of_date(date_time_1: str, date_time_2: str) -> str:
-    """
-
-    :param date_time_1:
-    :param date_time_2:
-    :return:
-    """
-    date_format = "%Y-%m-%d %H:%M:%S"
-    date_1, date_2 = date_time_1.split("."), date_time_2.split(".")
-    date1 = datetime.datetime.strptime(date_1[0], date_format)
-    date2 = datetime.datetime.strptime(date_2[0], date_format)
-    sum_of_dates = date1 + (date2 - date1) / 2
-    return str(sum_of_dates)
-
-
-def get_date_with_microseconds(date: str) -> str:
-    return date.split(".")[0]
+import validation
+import database
+import utils
 
 
 def calculate_ema(df, ema_period) -> None:
@@ -120,14 +17,6 @@ def calculate_ema(df, ema_period) -> None:
     df["EMA"] = df["Close"].ewm(span=ema_period, adjust=False).mean()
 
 
-def create_plot():
-    """
-    Функция для построения графика свечи
-    :return:
-    """
-    pass
-
-
 def create_plot_datas(data: list) -> list[dict]:
     """
     Функция для обработки данных из файла
@@ -139,18 +28,18 @@ def create_plot_datas(data: list) -> list[dict]:
 
     plot_data = list()
     for i in range(len(data) - 1):
-        valid_data = check_data_valid(data[i])
+        valid_data = validation.check_data_valid(data[i])
         if valid_data:
             data.pop(i)
-            plot_data.append(create_ohlc(valid_data))
+            plot_data.append(database.create_ohlc(valid_data))
             break
     for row in data:
         needed_data = plot_data[-1]
-        valid_data = check_data_valid(row)
+        valid_data = validation.check_data_valid(row)
         if valid_data:
             last_close_date = needed_data["close_date"]
             current_close_date, current_price = valid_data[0], valid_data[1]
-            less_1_hour = get_time_difference(last_close_date, current_close_date)
+            less_1_hour = utils.get_time_difference(last_close_date, current_close_date)
             if less_1_hour:
                 # plot_data[-1]["close_date"] = last_close_date
                 if current_price > plot_data[-1]["high"]:
@@ -180,8 +69,8 @@ def create_plot_from_datas(data: list[dict]) -> None:
     plot_data = []
     for row in data:
         plot_row = []
-        date = get_sum_of_date(row["close_date"], row["open_date"])
-        plot_row.append(get_date_with_microseconds(date))
+        date = utils.get_sum_of_date(row["close_date"], row["open_date"])
+        plot_row.append(utils.get_date_with_microseconds(date))
         plot_row.append(row["open"])
         plot_row.append(row["high"])
         plot_row.append(row["low"])
