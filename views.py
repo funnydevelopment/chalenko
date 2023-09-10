@@ -5,23 +5,15 @@ import pandas as pd
 import mplfinance as mpf
 import datetime
 
-import database
-
 
 logger = logging.getLogger(__name__)
-# todo
-# 1. вытащить все данные из файла
-# 2. разбить данные по часам
-# 3. в по разбитым часовым данным найти open, high, low, close
-# 4. построить график
-# 5. по графику построить EMA
 
 
 def check_date_valid(time: str) -> bool:
     """
     Функция проверяет дату на корректность значения и формат
     :param time: '2023-07-22 11:41:59.580000000'
-    :return: '2023-07-22 11:41:59.580000000' | None
+    :return: True | False
     """
     try:
         date_format = "%Y-%m-%d %H:%M:%S"
@@ -37,6 +29,11 @@ def check_date_valid(time: str) -> bool:
 
 
 def check_price_valid(price: str) -> bool:
+    """
+
+    :param price: '1873.3567938612'
+    :return: True | False
+    """
     integer_part, decimal_part = price.split(".")
     return integer_part.isdigit() and decimal_part.isdigit()
 
@@ -61,6 +58,11 @@ def check_data_valid(date_and_price: List[str]) -> Union[list, None]:
 
 
 def create_ohlc(date_and_price: List[Union[str, int, float]]) -> dict:
+    """
+
+    :param date_and_price:
+    :return:
+    """
     ohlc_dict = {
         "open_date": date_and_price[0],
         "close_date": date_and_price[0],
@@ -73,6 +75,12 @@ def create_ohlc(date_and_price: List[Union[str, int, float]]) -> dict:
 
 
 def get_time_difference(last_date: str, current_date: str) -> bool:
+    """
+
+    :param last_date:
+    :param current_date: True | False
+    :return:
+    """
     date_format = "%Y-%m-%d %H:%M:%S"
     last_date_1, current_date_1 = last_date.split("."), current_date.split(".")
     last_date_datetime = datetime.datetime.strptime(last_date_1[0], date_format)
@@ -83,6 +91,12 @@ def get_time_difference(last_date: str, current_date: str) -> bool:
 
 
 def get_sum_of_date(date_time_1: str, date_time_2: str) -> str:
+    """
+
+    :param date_time_1:
+    :param date_time_2:
+    :return:
+    """
     date_format = "%Y-%m-%d %H:%M:%S"
     date_1, date_2 = date_time_1.split("."), date_time_2.split(".")
     date1 = datetime.datetime.strptime(date_1[0], date_format)
@@ -99,7 +113,7 @@ def create_plot():
     pass
 
 
-def create_plot_datas(data: list):
+def create_plot_datas(data: list) -> list[dict]:
     """
     Функция для обработки данных из файла
     :param data: [['2023-07-02 21:25:59.556000000', '1921.5222860571'],
@@ -109,7 +123,7 @@ def create_plot_datas(data: list):
     """
 
     plot_data = list()
-    for i in range(len(data)-1):
+    for i in range(len(data) - 1):
         valid_data = check_data_valid(data[i])
         if valid_data:
             data.pop(i)
@@ -119,7 +133,6 @@ def create_plot_datas(data: list):
         needed_data = plot_data[-1]
         valid_data = check_data_valid(row)
         if valid_data:
-
             last_close_date = needed_data["close_date"]
             current_close_date, current_price = valid_data[0], valid_data[1]
             less_1_hour = get_time_difference(last_close_date, current_close_date)
@@ -144,6 +157,11 @@ def create_plot_datas(data: list):
 
 
 def create_plot_from_datas(data: list) -> None:
+    """
+
+    :param data:
+    :return:
+    """
     plot_data = []
     for row in data:
         plot_row = []
@@ -165,11 +183,16 @@ def create_plot_from_datas(data: list) -> None:
     df.set_index("Date", inplace=True)
 
     # Построение графика свечей OHLC
-    mpf.plot(df, type="candle", title="График свечей OHLC", ylabel="Цена",
-             volume=False)
+    mpf.plot(df, type="candle", title="График свечей OHLC", ylabel="Цена", volume=False)
 
 
 def calculate_ema(df, ema_period):
+    """
+
+    :param df:
+    :param ema_period:
+    :return:
+    """
     # Рассчитываем EMA (период ema_period) и добавляем его в DataFrame
     df["EMA"] = df["Close"].ewm(span=ema_period, adjust=False).mean()
 
@@ -197,13 +220,11 @@ def test_data_plot():
     calculate_ema(df, ema_period)
 
     # Построение графика свечей OHLC с EMA
-    mpf.plot(df, type="candle", title="График свечей OHLC с EMA", ylabel="Цена", volume=False, addplot=[mpf.make_addplot(df["EMA"], color='blue')])
-
-# Вызываем функцию для построения графика
-# test_data_plot()
-# datas = database.get_data()
-# print(len(datas))
-# for row in datas:
-#     print(row)
-
-
+    mpf.plot(
+        df,
+        type="candle",
+        title="График свечей OHLC с EMA",
+        ylabel="Цена",
+        volume=False,
+        addplot=[mpf.make_addplot(df["EMA"], color="blue")],
+    )
