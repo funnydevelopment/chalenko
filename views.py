@@ -41,7 +41,7 @@ def check_price_valid(price: str) -> bool:
     return integer_part.isdigit() and decimal_part.isdigit()
 
 
-def check_data_valid(date_and_price: List[str]) -> list | None:
+def check_data_valid(date_and_price: List[str]) -> Union[list, None]:
     """
     Функция, которая получает список, проверяет и возвращает корректные данные или None
     :param date_and_price: ['2023-07-23 05:11:47.948000000', '1873.3567938612']
@@ -55,7 +55,7 @@ def check_data_valid(date_and_price: List[str]) -> list | None:
             return [date, float(price)]
     except ValueError as error:
         logger.error(f"Некорректные данные: {error}")
-    return
+    return None
 
 
 def create_ohlc(date_and_price: List[Union[str, int, float]]) -> dict:
@@ -72,13 +72,21 @@ def create_ohlc(date_and_price: List[Union[str, int, float]]) -> dict:
 
 def get_time_difference(last_date: str, current_date: str) -> bool:
     date_format = "%Y-%m-%d %H:%M:%S"
-    last_date_1 = last_date.split(".")
-    current_date_1 = current_date.split(".")
+    last_date_1, current_date_1 = last_date.split("."), current_date.split(".")
     last_date_datetime = datetime.datetime.strptime(last_date_1[0], date_format)
     current_date_datetime = datetime.datetime.strptime(current_date_1[0], date_format)
     if (current_date_datetime - last_date_datetime) < datetime.timedelta(hours=1):
         return True
     return False
+
+
+def get_sum_of_date(date_time_1: str, date_time_2: str) -> str:
+    date_format = "%Y-%m-%d %H:%M:%S"
+    date_1, date_2 = date_time_1.split("."), date_time_2.split(".")
+    date1 = datetime.datetime.strptime(date_1[0], date_format)
+    date2 = datetime.datetime.strptime(date_2[0], date_format)
+    sum_of_dates = date1 + (date2 - date1) / 2
+    return str(sum_of_dates)
 
 
 def create_plot():
@@ -98,10 +106,11 @@ def create_plot_datas(data: list):
     :return:
     """
     # data = database.get_data()
-    plot_data = []
-    for row in data:
-        valid_data = check_data_valid(row)
+    plot_data = list()
+    for i in range(len(data)-1):
+        valid_data = check_data_valid(data[i])
         if valid_data:
+            data.pop(i)
             plot_data.append(create_ohlc(valid_data))
             break
     for row in data:
@@ -114,16 +123,54 @@ def create_plot_datas(data: list):
             less_1_hour = get_time_difference(last_close_date, current_close_date)
             if less_1_hour:
                 plot_row["close_date"] = last_close_date
-                current_high_price = needed_data.get("high")
-                print(type(current_price))
+                current_high_price = plot_data[-1]["high"]
                 if current_price - current_high_price > 0:
                     plot_data[-1]["high"] = current_price
-                if current_price < float(plot_data[-1]["low"]):
+                if current_price < plot_data[-1]["low"]:
                     plot_data[-1]["low"] = current_price
+                print(plot_data)
             else:
-                plot_data[-1]["close_date"] = [current_close_date]
-        plot_data.append(plot_row)
+                plot_data[-1]["close_date"] = current_close_date
+                plot_data[-1]["close"] = current_price
+                plot_row["open_date"] = current_close_date
+                plot_row["close_date"] = current_close_date
+                plot_row["open"] = current_price
+                plot_row["high"] = current_price
+                plot_row["low"] = current_price
+                plot_row["close"] = current_price
+                plot_data.append(plot_row)
     return plot_data
+
+
+def create_plot_from_datas(data: list) -> None:
+    plot_data = []
+    for row in data:
+        plot_row = []
+        date = get_sum_of_date(row["close_date"], row["open_date"])
+        plot_row.append(date)
+        plot_row.append(row["open"])
+        plot_row.append(row["high"])
+        plot_row.append(row["low"])
+        plot_row.append(row["close"])
+        plot_data.append(plot_row)
+
+    # Преобразование данных в DataFrame
+    df = pd.DataFrame(plot_data, columns=["Date", "Open", "High", "Low", "Close"])
+
+    # Преобразование столбца 'Date' в формат datetime
+    df["Date"] = pd.to_datetime(df["Date"])
+
+    # Установка индекса на столбец 'Date'
+    df.set_index("Date", inplace=True)
+
+    # Построение графика свечей OHLC
+    mpf.plot(df, type="candle", title="График свечей OHLC", ylabel="Цена",
+             volume=False)
+
+
+def calculate_ema(df, ema_period):
+    # Рассчитываем EMA (период ema_period) и добавляем его в DataFrame
+    df["EMA"] = df["Close"].ewm(span=ema_period, adjust=False).mean()
 
 
 def test_data_plot():
@@ -144,5 +191,13 @@ def test_data_plot():
     # Установка индекса на столбец 'Date'
     df.set_index("Date", inplace=True)
 
-    # Построение графика свечей OHLC
-    mpf.plot(df, type="candle", title="График свечей OHLC", ylabel="Цена", volume=False)
+    # Рассчет EMA (период 10)
+    ema_period = 10
+    calculate_ema(df, ema_period)
+
+    # Построение графика свечей OHLC с EMA
+    mpf.plot(df, type="candle", title="График свечей OHLC с EMA", ylabel="Цена", volume=False, addplot=[mpf.make_addplot(df["EMA"], color='blue')])
+
+# Вызываем функцию для построения графика
+test_data_plot()
+
