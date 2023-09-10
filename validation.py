@@ -28,7 +28,7 @@ def check_date_valid(time: str) -> bool:
 
 def check_price_valid(price: str) -> bool:
     """
-
+    Функция проверяет цену на корректность значения и формат
     :param price: '1873.3567938612'
     :return: True | False
     """
