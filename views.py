@@ -105,6 +105,21 @@ def get_sum_of_date(date_time_1: str, date_time_2: str) -> str:
     return str(sum_of_dates)
 
 
+def get_date_with_microseconds(date: str) -> str:
+    return date.split(".")[0]
+
+
+def calculate_ema(df, ema_period) -> None:
+    """
+
+    :param df:
+    :param ema_period:
+    :return:
+    """
+    # Рассчитываем EMA (период ema_period) и добавляем его в DataFrame
+    df["EMA"] = df["Close"].ewm(span=ema_period, adjust=False).mean()
+
+
 def create_plot():
     """
     Функция для построения графика свечи
@@ -156,7 +171,7 @@ def create_plot_datas(data: list) -> list[dict]:
     return plot_data
 
 
-def create_plot_from_datas(data: list) -> None:
+def create_plot_from_datas(data: list[dict]) -> None:
     """
 
     :param data:
@@ -166,60 +181,22 @@ def create_plot_from_datas(data: list) -> None:
     for row in data:
         plot_row = []
         date = get_sum_of_date(row["close_date"], row["open_date"])
-        plot_row.append(date)
+        plot_row.append(get_date_with_microseconds(date))
         plot_row.append(row["open"])
         plot_row.append(row["high"])
         plot_row.append(row["low"])
         plot_row.append(row["close"])
         plot_data.append(plot_row)
 
-    # Преобразование данных в DataFrame
     df = pd.DataFrame(plot_data, columns=["Date", "Open", "High", "Low", "Close"])
 
-    # Преобразование столбца 'Date' в формат datetime
     df["Date"] = pd.to_datetime(df["Date"])
 
-    # Установка индекса на столбец 'Date'
     df.set_index("Date", inplace=True)
 
-    # Построение графика свечей OHLC
-    mpf.plot(df, type="candle", title="График свечей OHLC", ylabel="Цена", volume=False)
-
-
-def calculate_ema(df, ema_period):
-    """
-
-    :param df:
-    :param ema_period:
-    :return:
-    """
-    # Рассчитываем EMA (период ema_period) и добавляем его в DataFrame
-    df["EMA"] = df["Close"].ewm(span=ema_period, adjust=False).mean()
-
-
-def test_data_plot():
-    data = [
-        ["2023-07-23 06:30:31.994999808", 1874.94, 1875.12, 1874.82, 1874.95],
-        ["2023-07-23 06:33:37.996000000", 1874.95, 1875.08, 1874.90, 1875.00],
-        ["2023-07-23 06:33:37.996999936", 1875.00, 1875.15, 1874.90, 1874.95],
-        ["2023-07-23 06:35:11.997999872", 1874.95, 1875.10, 1874.90, 1874.98],
-        ["2023-07-23 06:37:07.999000064", 1874.98, 1875.00, 1874.75, 1874.80],
-    ]
-
-    # Преобразование данных в DataFrame
-    df = pd.DataFrame(data, columns=["Date", "Open", "High", "Low", "Close"])
-
-    # Преобразование столбца 'Date' в формат datetime
-    df["Date"] = pd.to_datetime(df["Date"])
-
-    # Установка индекса на столбец 'Date'
-    df.set_index("Date", inplace=True)
-
-    # Рассчет EMA (период 10)
-    ema_period = 10
+    ema_period = 1736
     calculate_ema(df, ema_period)
 
-    # Построение графика свечей OHLC с EMA
     mpf.plot(
         df,
         type="candle",
